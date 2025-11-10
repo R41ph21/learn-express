@@ -116,4 +116,10 @@ app.delete('/users', (req, res) => {
   })
 })
 
+// PATCH - Delvis uppdatering
+app.patch('/users/:id', (req, res) => {
+  const id = parseInt (req.params.id)
+  const = user = users.find (u => u.id === id)
+  
+
 export default app
