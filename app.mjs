@@ -180,4 +180,48 @@ app.put('/users/:id', (req, res) => {
   res.json(users[userIndex])
 })
 
+//Logging middleware (lägg överst efter express.josn())
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`)
+  next()
+})
+
+//API key middleware (exempel på säkerhet)
+const apiKeyMiddleware = (req, res, next) => {
+  const apiKey = req.headers['x-api-key']
+
+  //Hoppa över för GET-requests i detta exempel 
+  if (req.method === 'GET') {
+    return next()
+  }
+
+  if (!apiKey || apiKey !== 'secret-key-123') {
+    return res.status(401).json({ 
+      error: 'Ogiltig API-nyckel'
+     })
+  }
+  
+  next()
+}
+
+//Applicera API key middleware på alla routes
+app.use('/users', apiKeyMiddleware)
+
+// 404 hantering - lägg sist!
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Route hittades inte' ,
+    path: req.path, 
+    method: req.method
+  })
+})
+
+// Global error handler - allra sist!
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).json({
+    error: 'Något gick fel på servern',
+    message: err.message
+  })
+})
 export default app
