@@ -1,9 +1,110 @@
 import express from "express"
+import {
+  validateUser,
+  validateUserId,
+  handleValidationErrors
+} from './validation.mjs'
 
 const app = express()
 
 // Middleware för att hantera JSON 
 app.use (express.json())
+
+//Logging middleware (lägg överst efter express.josn())
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`)
+  next()
+})
+
+//API key middleware (exempel på säkerhet)
+const apiKeyMiddleware = (req, res, next) => {
+  const apiKey = req.headers['x-api-key']
+
+  //Hoppa över för GET-requests i detta exempel 
+  if (req.method === 'GET') {
+    return next()
+  }
+
+  if (!apiKey || apiKey !== 'secret-key-123') {
+    return res.status(401).json({ 
+      error: 'Ogiltig API-nyckel'
+     })
+  }
+  
+  next()
+}
+
+//Applicera API key middleware på alla routes
+app.use('/users', apiKeyMiddleware)
+
+
+
+// Uppdatera POST med validering 
+app.post('/users',
+  validateUser,
+  handleValidationErrors,
+  (req, res) => {
+    // Din tidigare Post-kod här
+    //Post - Skapa ny användare
+app.post('/users', (req, res) => {
+  const { name, email } = req.body
+
+  //Validering 
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name och email krävs' 
+    })
+  }
+
+  //Kontrollera om email redan finns
+  if (users.some(u => u.email === email)) {
+    return res.status(409).json({ error: 'Email finns redan' 
+    })
+  }
+
+  //Skapa ny användare
+  const newUser = {
+    id: users.length + 1,
+    name,
+    email
+  }
+
+  users.push(newUser)
+
+  //Returnera skapad användare med status 201
+  res.status(201).json(newUser)
+})
+
+  }
+)
+
+// Rate limiting (grundläggande)
+const requestCounts = new Map()
+
+const rateLimitMiddleware = (req, res, next) => {
+  const ip = req.ip
+  const now = Date.now()
+  const WindowMs = 60 * 1000 // 1 minut
+  const maxRequests = 10 
+
+  if (!requestCounts.has(ip)){
+    requestCounts.set(ip, [])
+  }
+
+  const timestamps = requestCounts.get(ip)
+  const recentRequest = timestamps.filter(t => now - t < WindowsMs)
+
+  if (recentRequests.lenght >= maxRequests) {
+    return res.status(429).json({
+      error: 'För många requests, försök igen senare'
+    })
+  }
+
+  recentRequests.push(now)
+  requestCounts.set(ip, recentRequests)
+  next()
+}
+
+app.use(rateLimitMiddleware)
 
 // Enkel route för att testa servern
 app.get('/', (req, res) => {
@@ -48,34 +149,7 @@ app.get('/search', (req, res) => {
 res.json(filteredUsers)
 })
 
-//Post - Skapa ny användare
-app.post('/users', (req, res) => {
-  const { name, email } = req.body
 
-  //Validering 
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Name och email krävs' 
-    })
-  }
-
-  //Kontrollera om email redan finns
-  if (users.some(u => u.email === email)) {
-    return res.status(409).json({ error: 'Email finns redan' 
-    })
-  }
-
-  //Skapa ny användare
-  const newUser = {
-    id: users.length + 1,
-    name,
-    email
-  }
-
-  users.push(newUser)
-
-  //Returnera skapad användare med status 201
-  res.status(201).json(newUser)
-})
 
 //Delete - Ta bort användare
 app.delete('/users/:id', (req, res) => {
@@ -180,33 +254,6 @@ app.put('/users/:id', (req, res) => {
   res.json(users[userIndex])
 })
 
-//Logging middleware (lägg överst efter express.josn())
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`)
-  next()
-})
-
-//API key middleware (exempel på säkerhet)
-const apiKeyMiddleware = (req, res, next) => {
-  const apiKey = req.headers['x-api-key']
-
-  //Hoppa över för GET-requests i detta exempel 
-  if (req.method === 'GET') {
-    return next()
-  }
-
-  if (!apiKey || apiKey !== 'secret-key-123') {
-    return res.status(401).json({ 
-      error: 'Ogiltig API-nyckel'
-     })
-  }
-  
-  next()
-}
-
-//Applicera API key middleware på alla routes
-app.use('/users', apiKeyMiddleware)
-
 // 404 hantering - lägg sist!
 app.use((req, res) => {
   res.status(404).json({ 
@@ -224,4 +271,5 @@ app.use((err, req, res, next) => {
     message: err.message
   })
 })
+
 export default app
