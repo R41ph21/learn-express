@@ -5,6 +5,7 @@ import {
   handleValidationErrors
 } from './validation.mjs'
 
+
 const app = express()
 
 // Middleware för att hantera JSON 
