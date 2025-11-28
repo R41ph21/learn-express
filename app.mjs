@@ -40,6 +40,7 @@ app.use('/users', apiKeyMiddleware)
 
 
 
+// Här har du två post-routrar i varandra?
 // Uppdatera POST med validering 
 app.post('/users',
   validateUser,
@@ -84,6 +85,7 @@ const requestCounts = new Map()
 const rateLimitMiddleware = (req, res, next) => {
   const ip = req.ip
   const now = Date.now()
+  // Tänk på att alltid börja variabelnamn med liten bokstav, alltså windowsMs
   const WindowMs = 60 * 1000 // 1 minut
   const maxRequests = 10 
 
@@ -92,8 +94,10 @@ const rateLimitMiddleware = (req, res, next) => {
   }
 
   const timestamps = requestCounts.get(ip)
+  // Ska vara recentRequests här
   const recentRequest = timestamps.filter(t => now - t < WindowsMs)
 
+  // Ska vara .length
   if (recentRequests.lenght >= maxRequests) {
     return res.status(429).json({
       error: 'För många requests, försök igen senare'
@@ -105,6 +109,7 @@ const rateLimitMiddleware = (req, res, next) => {
   next()
 }
 
+// Denna ska ligga före alla routrar
 app.use(rateLimitMiddleware)
 
 // Enkel route för att testa servern
@@ -158,6 +163,7 @@ app.delete('/users/:id', (req, res) => {
   const userIndex = users.findIndex(u => u.id === Id)
   
   if (userIndex ===-1) {
+    // .json
     return res.status(404).jason({
       error: 'Användare hittades inte'
     })
@@ -235,6 +241,7 @@ app.put('/users/:id', (req, res) => {
   const id =parseInt(req.params.id)
   const userIndex = users.findIndex(u => u.id === id)
 
+  // Ta bort utropstecknet
   if (!userIndex === -1) {
     return res.status(404).json({
       error: 'Användare hittades inte'
